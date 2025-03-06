@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -58,6 +59,30 @@ func main() {
 						Name:     "definition",
 						Usage:    "Glossary Term definition",
 						Required: false,
+					},
+				},
+			},
+			{
+				Name:      "from-json",
+				Usage:     "Create a dataset from a JSON file",
+				ArgsUsage: "FILE",
+				Action:    runFromJSON,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "datahub-gms-url",
+						EnvVars: []string{"DATAHUB_GMS_URL"},
+						Usage:   "DataHub URL",
+						Value:   "https://api.datahub.io",
+					},
+					&cli.StringFlag{
+						Name:    "datahub-gms-token",
+						EnvVars: []string{"DATAHUB_GMS_TOKEN"},
+						Usage:   "DataHub token",
+					},
+					&cli.StringFlag{
+						Name:     "entity-type",
+						Usage:    "Entity type to send (dataset, glossaryTerm, tag, etc)",
+						Required: true,
 					},
 				},
 			},
@@ -687,5 +712,56 @@ func runAddGlossaryTerm(c *cli.Context) error {
 	}
 
 	fmt.Println("Glossary term successfully added to DataHub!")
+	return nil
+}
+
+func runFromJSON(c *cli.Context) error {
+	filePath := c.Args().First()
+	entityType := c.String("entity-type")
+
+	if filePath == "" {
+		return errors.New("file path is required")
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
+	// if entity-type is dataset it'll be an array of Dataset objects
+	var datasets []datahub.Dataset
+	var glossaryTerms []datahub.GlossaryTerm
+	var entities interface{}
+
+	switch entityType {
+	case "dataset":
+		err = json.Unmarshal(data, &datasets)
+		entities = datasets
+	case "glossaryTerm":
+		err = json.Unmarshal(data, &glossaryTerms)
+		entities = glossaryTerms
+	default:
+		return fmt.Errorf("unsupported entity type: %s", entityType)
+	}
+
+	if err != nil {
+		return fmt.Errorf("error decoding JSON: %w", err)
+	}
+
+	datahubURL := c.String("datahub-gms-url")
+	datahubToken := c.String("datahub-gms-token")
+
+	dh := datahub.NewClient(datahubURL, datahubToken)
+	jblob, err := json.MarshalIndent(entities, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error encoding datasets to JSON: %w", err)
+	}
+
+	count, err := dh.PostEntity(entityType, string(jblob))
+	if err != nil {
+		return fmt.Errorf("error adding datasets: %w", err)
+	}
+
+	fmt.Printf("%d entities successfully created in DataHub!\n", count)
 	return nil
 }

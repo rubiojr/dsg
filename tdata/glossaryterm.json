@@ -1,11 +1,11 @@
 [
   {
-    "urn": "string",
+    "urn": "urn:li:glossaryTerm:test-term",
     "glossaryTermInfo": {
       "value": {
-        "name": "string",
-        "definition": "string",
-        "termSource": "string"
+        "name": "test-term",
+        "definition": "something",
+        "termSource": "INTERNAL"
       }
     }
   }
