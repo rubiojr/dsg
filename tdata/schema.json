@@ -28,7 +28,7 @@
                   "urn": "urn:li:glossaryTerm:Test.PersonalData"
                 }
               ],
-              "auditStamp": {"time": 0, "actor": "urn:li:corpuser:datahub"}
+              "auditStamp": { "time": 0, "actor": "urn:li:corpuser:datahub" }
             }
           },
           {
@@ -63,6 +63,28 @@
         "origin": "PROD"
       }
     },
-    "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,test.test_schema.rubiojr,PROD)"
+    "globalTags": {
+      "value": {
+        "tags": [
+          {
+            "tag": "urn:li:tag:dsg-generated"
+          }
+        ]
+      }
+    },
+    "glossaryTerms": {
+      "value": {
+        "terms": [
+          {
+            "urn": "urn:li:glossaryTerm:Test.PersonalData",
+          }
+        ],
+        "auditStamp": {
+          "time": 0,
+          "actor": "urn:li:corpuser:datahub"
+        }
+      }
+    },
+    "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,test.test_schema.dsg_@@REPLACE_ME@@,PROD)"
   }
 ]

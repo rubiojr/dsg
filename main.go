@@ -106,6 +106,12 @@ func main() {
 					&cli.BoolFlag{
 						Name:  "skip-post",
 						Usage: "Do not post the datasets to DataHub",
+						Value: false,
+					},
+					&cli.IntFlag{
+						Name:  "prompt-from",
+						Usage: "Post using the prompt from history",
+						Value: -1,
 					},
 				},
 			},
@@ -176,6 +182,20 @@ func main() {
 	}
 }
 
+func getResponse(id int64) (*storage.Response, error) {
+	db, err := storage.NewSQLiteStorage()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize history database: %w", err)
+	}
+	defer db.Close()
+
+	resp, err := db.GetResponse(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get history entry: %w", err)
+	}
+	return resp, nil
+}
+
 func runGenerate(c *cli.Context) error {
 	apiKey := c.String("api-key")
 	apiBase := c.String("api-base")
@@ -187,6 +207,7 @@ func runGenerate(c *cli.Context) error {
 	datahubToken := c.String("datahub-gms-token")
 	toStdout := c.Bool("stdout")
 	skipPost := c.Bool("skip-post")
+	fromHistory := c.Int64("prompt-from")
 
 	// Validate Azure arguments
 	if useAzure && azureDeployment == "" {
@@ -200,15 +221,24 @@ func runGenerate(c *cli.Context) error {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	fmt.Println("Generating DataHub datasets...")
-	fmt.Println()
 	log.Debugf("Writing temp prompt file to %s...\n", tmpfile.Name())
-	fmt.Println("Write the input for AI, hit Ctrl-D when finished:")
-	fmt.Println()
 
-	userInput, err := readUserInput()
-	if err != nil {
-		return fmt.Errorf("error reading user input: %w", err)
+	var userInput string
+	if fromHistory > -1 {
+		fmt.Println("Loading prompt from history...")
+		resp, err := getResponse(fromHistory)
+		if err != nil {
+			return fmt.Errorf("error getting response from history: %w", err)
+		}
+		userInput = resp.Prompt
+		fmt.Println("\n>> " + strings.TrimSpace(userInput))
+	} else {
+		fmt.Println("Write the input for AI, hit Enter+Ctrl-D when finished:")
+		fmt.Println()
+		userInput, err = readUserInput()
+		if err != nil {
+			return fmt.Errorf("error reading user input: %w", err)
+		}
 	}
 
 	// Construct the prompt
@@ -232,7 +262,7 @@ Do not explain anything. Return only the required JSON. Do not format the respon
 	}
 
 	fmt.Println()
-	fmt.Println("Understood!")
+	fmt.Println("Understood! generating DataHub datasets...")
 	fmt.Println("Processing input and generating the dataset (may take a while)...")
 
 	// Initialize the OpenAI client
@@ -317,13 +347,13 @@ Do not explain anything. Return only the required JSON. Do not format the respon
 	// Execute post-dataset command
 	log.Debug("posting the dataset")
 	dh := datahub.NewClient(datahubURL, datahubToken)
-	count, err := dh.PostDatasets(responseData)
+	count, err := dh.PostEntity("dataset", responseData)
 	if err != nil {
 		return fmt.Errorf("error posting datasets: %w", err)
 	}
 
-	fmt.Println(" 🤖 finished!")
-	if count > 0 {
+	fmt.Println("🤖 finished!")
+	if count > 1 {
 		fmt.Printf("%d datasets created! ☑", count)
 	} else {
 		fmt.Println()
@@ -552,7 +582,7 @@ func runPostHistory(c *cli.Context) error {
 
 	// Execute post-dataset command
 	dh := datahub.NewClient(datahubURL, datahubToken)
-	count, err := dh.PostDatasets(resp.Response)
+	count, err := dh.PostEntity("dataset", resp.Response)
 	if err != nil {
 		return fmt.Errorf("error posting dataset: %w", err)
 	}
