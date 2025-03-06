@@ -30,6 +30,38 @@ func main() {
 		Usage: "AI assisted DataHub dataset generator",
 		Commands: []*cli.Command{
 			{
+				Name:   "add-term",
+				Usage:  "Add a glossary term to DataHub",
+				Action: runAddGlossaryTerm,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "datahub-gms-url",
+						EnvVars: []string{"DATAHUB_GMS_URL"},
+						Usage:   "DataHub URL",
+						Value:   "https://api.datahub.io",
+					},
+					&cli.StringFlag{
+						Name:    "datahub-gms-token",
+						EnvVars: []string{"DATAHUB_GMS_TOKEN"},
+						Usage:   "DataHub token",
+					},
+					&cli.StringFlag{
+						Name:     "name",
+						Usage:    "Glossary Term name",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:  "urn",
+						Usage: "Glossary Term URN",
+					},
+					&cli.StringFlag{
+						Name:     "definition",
+						Usage:    "Glossary Term definition",
+						Required: true,
+					},
+				},
+			},
+			{
 				Name:      "post",
 				Usage:     "Post a previously saved response to DataHub",
 				ArgsUsage: "HISTORY_ID",
@@ -618,4 +650,42 @@ func readUserInput() (string, error) {
 	}
 
 	return userInput.String(), nil
+}
+
+func runAddGlossaryTerm(c *cli.Context) error {
+	name := c.String("name")
+	urn := c.String("urn")
+	if urn == "" {
+		urn = "urn:li:glossaryTerm:" + name
+	}
+	definition := c.String("definition")
+
+	datahubURL := c.String("datahub-gms-url")
+	datahubToken := c.String("datahub-gms-token")
+
+	dh := datahub.NewClient(datahubURL, datahubToken)
+	gTerm := datahub.GlossaryTerm{
+		URN: urn,
+		Info: datahub.GlossaryTermInfo{
+			Value: datahub.GlossaryTermValue{
+				Name:       name,
+				Definition: definition,
+				Source:     "INTERNAL",
+			},
+		},
+	}
+
+	terms := []datahub.GlossaryTerm{gTerm}
+	payload, err := json.Marshal(terms)
+	if err != nil {
+		return fmt.Errorf("error encoding glossary term to JSON: %w", err)
+	}
+
+	_, err = dh.PostEntity("glossaryTerm", string(payload))
+	if err != nil {
+		return fmt.Errorf("error adding glossary term: %w", err)
+	}
+
+	fmt.Println("Glossary term successfully added to DataHub!")
+	return nil
 }
