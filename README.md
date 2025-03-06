@@ -127,10 +127,10 @@ Writing temp prompt file to /tmp/XXXXXprompt...
 Write the input for AI, hit Ctrl-D when finished:
 
 Create a dataset named "customer_profiles" with fields for:
-- customer_id (unique identifier)
-- first_name
+- customer_id (unique identifier) Tags: unique
+- first_name Glossary Term: DSR.PrivateData
 - last_name
-- email
+- email Glossary Term: DSR.PrivateData
 - signup_date
 - last_purchase_date
 - loyalty_tier (bronze, silver, gold, platinum)
@@ -143,6 +143,10 @@ Processing input and generating the dataset (may take a while)...
  🤖 finished!
 1 datasets created! ☑
 ```
+
+This is sent to DataHub and the following dataset is created:
+
+![dataset](/docs/dataset.png)
 
 ## License
 
