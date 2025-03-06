@@ -76,7 +76,7 @@
       "value": {
         "terms": [
           {
-            "urn": "urn:li:glossaryTerm:Test.PersonalData",
+            "urn": "urn:li:glossaryTerm:Test.PersonalData"
           }
         ],
         "auditStamp": {
