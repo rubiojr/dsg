@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +11,8 @@ import (
 	"strings"
 
 	_ "embed"
+
+	"time"
 
 	"github.com/rubiojr/dsg/internal/datahub"
 	"github.com/rubiojr/dsg/internal/log"
@@ -22,36 +23,6 @@ import (
 
 //go:embed tdata/schema.json
 var trainingDataset string
-
-func sendOpenAIRequest(client *openai.Client, model, prompt string) (string, error) {
-	ctx := context.Background()
-
-	// Create chat completion request
-	resp, err := client.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model: model,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: prompt,
-				},
-			},
-			Temperature: 0.2, // Lower temperature for more deterministic output
-			MaxTokens:   4000,
-		},
-	)
-	if err != nil {
-		return "", err
-	}
-
-	if len(resp.Choices) == 0 {
-		return "", fmt.Errorf("no response choices from OpenAI")
-	}
-
-	// Extract the response content
-	return resp.Choices[0].Message.Content, nil
-}
 
 func main() {
 	app := &cli.App{
@@ -127,6 +98,14 @@ func main() {
 						Name:    "datahub-gms-token",
 						EnvVars: []string{"DATAHUB_GMS_TOKEN"},
 						Usage:   "DataHub token",
+					},
+					&cli.BoolFlag{
+						Name:  "stdout",
+						Usage: "Write the generated datasets to stdout",
+					},
+					&cli.BoolFlag{
+						Name:  "skip-post",
+						Usage: "Do not post the datasets to DataHub",
 					},
 				},
 			},
@@ -206,6 +185,8 @@ func runGenerate(c *cli.Context) error {
 	azureAPIVersion := c.String("azure-api-version")
 	datahubURL := c.String("datahub-gms-url")
 	datahubToken := c.String("datahub-gms-token")
+	toStdout := c.Bool("stdout")
+	skipPost := c.Bool("skip-post")
 
 	// Validate Azure arguments
 	if useAzure && azureDeployment == "" {
@@ -219,24 +200,15 @@ func runGenerate(c *cli.Context) error {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	fmt.Println("Creating a DataHub dataset using NLP...")
+	fmt.Println("Generating DataHub datasets...")
 	fmt.Println()
-	fmt.Printf("Writing temp prompt file to %s...\n", tmpfile.Name())
+	log.Debugf("Writing temp prompt file to %s...\n", tmpfile.Name())
 	fmt.Println("Write the input for AI, hit Ctrl-D when finished:")
 	fmt.Println()
 
-	// Read user input
-	reader := bufio.NewReader(os.Stdin)
-	var userInput strings.Builder
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("error reading input: %w", err)
-		}
-		userInput.WriteString(line)
+	userInput, err := readUserInput()
+	if err != nil {
+		return fmt.Errorf("error reading user input: %w", err)
 	}
 
 	// Construct the prompt
@@ -248,7 +220,8 @@ Give me another schema taking into account:
 
 %s
 
-Do not explain anything. Return only the required JSON. Do not format the response as markdown.`, trainingDataset, userInput.String())
+Replace @@@REPLACE_ME@@@ with %d.
+Do not explain anything. Return only the required JSON. Do not format the response as markdown.`, trainingDataset, userInput, time.Now().UnixMilli())
 
 	// Write the prompt to the temp file
 	if _, err := tmpfile.WriteString(prompt); err != nil {
@@ -322,12 +295,23 @@ Do not explain anything. Return only the required JSON. Do not format the respon
 		fmt.Printf("Warning: Failed to initialize history database: %v\n", err)
 	} else {
 		defer db.Close()
-		id, err := db.SaveResponse(userInput.String(), responseData, schemaName, schemaURN, datasetName)
+		id, err := db.SaveResponse(userInput, responseData, schemaName, schemaURN, datasetName)
 		if err != nil {
 			fmt.Printf("Warning: Failed to save to history: %v\n", err)
 		} else {
 			log.Debugf("Response saved to history with ID: %d\n", id)
 		}
+	}
+
+	if toStdout {
+		fmt.Println("Generated JSON:")
+		fmt.Println()
+		fmt.Println(responseData)
+		fmt.Println()
+	}
+
+	if skipPost {
+		return nil
 	}
 
 	// Execute post-dataset command
@@ -586,4 +570,22 @@ func runPostHistory(c *cli.Context) error {
 	}
 
 	return nil
+}
+
+func readUserInput() (string, error) {
+	// Read user input
+	reader := bufio.NewReader(os.Stdin)
+	var userInput strings.Builder
+	for {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("error reading input: %w", err)
+		}
+		userInput.WriteString(line)
+	}
+
+	return userInput.String(), nil
 }

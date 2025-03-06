@@ -2,7 +2,7 @@
   {
     "schemaMetadata": {
       "value": {
-        "schemaName": "rubiojr",
+        "schemaName": "dsg_@@REPLACE_ME@@",
         "platform": "urn:li:dataPlatform:snowflake",
         "version": 0,
         "hash": "",
@@ -13,30 +13,30 @@
         },
         "fields": [
           {
-            "fieldPath": "private_data",
+            "fieldPath": "field_with_private_data",
             "description": "This contains private data",
             "type": {
               "type": {
-                "com.linkedin.schema.NumberType": {}
+                "com.linkedin.schema.StringType": {}
               }
             },
-            "nativeDataType": "int",
+            "nativeDataType": "string",
             "recursive": false,
             "glossaryTerms": {
               "terms": [
                 {
-                  "urn": "urn:li:glossaryTerm:Test.PrivateData"
+                  "urn": "urn:li:glossaryTerm:Test.PersonalData"
                 }
               ],
               "auditStamp": {"time": 0, "actor": "urn:li:corpuser:datahub"}
             }
           },
           {
-            "fieldPath": "stuff_field",
-            "description": "fooo",
+            "fieldPath": "numeric_field",
+            "description": "a field with numeric data and no terms attached",
             "type": {
               "type": {
-                "com.linkedin.schema.StringType": {}
+                "com.linkedin.schema.NumberType": {}
               }
             },
             "nativeDataType": "string",
