@@ -140,7 +140,7 @@ Create a dataset named "customer_profiles" with fields for:
 
 Understood!
 Processing input and generating the dataset (may take a while)...
- 🤖 finished!
+🤖 finished!
 1 datasets created! ☑
 ```
 
