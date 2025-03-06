@@ -2,7 +2,7 @@
 
 ## Overview
 
-DSG (DataHub Schema Generator) is a command-line tool that uses AI to generate and manage DataHub dataset schemas. It leverages OpenAI's language models to create dataset schemas based on user descriptions, then posts them directly to DataHub.
+DSG ([DataHub](https://datahubproject.io/) Schema Generator) is a command-line tool that uses AI to generate and manage DataHub dataset schemas. It leverages OpenAI's language models to create dataset schemas based on user descriptions, then posts them directly to DataHub.
 
 ## Features
 
