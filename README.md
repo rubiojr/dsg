@@ -68,6 +68,12 @@ dsg generate
 
 This will open an interactive prompt where you can describe the dataset you want to create. After writing your description, press Ctrl+D to submit. The AI will generate a schema and post it to DataHub automatically.
 
+Generate using a previously used prompt:
+
+```bash
+dsg generate --prompt-from <ID> # see history command
+```
+
 #### View Generation History
 
 ```bash
