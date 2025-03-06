@@ -1,3 +1,4 @@
+![](/docs/gearbox.png)
 # DSG - DataHub Schema Generator
 
 ## Overview
