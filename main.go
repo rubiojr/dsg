@@ -13,9 +13,9 @@ import (
 
 	_ "embed"
 
-	"github.com/rubiojr/dsg/datahub"
+	"github.com/rubiojr/dsg/internal/datahub"
 	"github.com/rubiojr/dsg/internal/log"
-	storage "github.com/rubiojr/dsg/storage/sqlite"
+	storage "github.com/rubiojr/dsg/internal/storage/sqlite"
 	"github.com/sashabaranov/go-openai"
 	"github.com/urfave/cli/v2"
 )
