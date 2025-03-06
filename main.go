@@ -282,7 +282,7 @@ Give me another schema taking into account:
 
 %s
 
-Replace @@@REPLACE_ME@@@ with %d.
+If a schema name is provided, set schemaName to the name provided. If not, replace @@@REPLACE_ME@@@ with %d.
 Do not explain anything. Return only the required JSON. Do not format the response as markdown.`, trainingDataset, userInput, time.Now().UnixMilli())
 
 	// Write the prompt to the temp file
