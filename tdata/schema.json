@@ -1,0 +1,68 @@
+[
+  {
+    "schemaMetadata": {
+      "value": {
+        "schemaName": "rubiojr",
+        "platform": "urn:li:dataPlatform:snowflake",
+        "version": 0,
+        "hash": "",
+        "platformSchema": {
+          "com.linkedin.schema.MySqlDDL": {
+            "tableSchema": ""
+          }
+        },
+        "fields": [
+          {
+            "fieldPath": "private_data",
+            "description": "This contains private data",
+            "type": {
+              "type": {
+                "com.linkedin.schema.NumberType": {}
+              }
+            },
+            "nativeDataType": "int",
+            "recursive": false,
+            "glossaryTerms": {
+              "terms": [
+                {
+                  "urn": "urn:li:glossaryTerm:Test.PrivateData"
+                }
+              ],
+              "auditStamp": {"time": 0, "actor": "urn:li:corpuser:datahub"}
+            }
+          },
+          {
+            "fieldPath": "stuff_field",
+            "description": "fooo",
+            "type": {
+              "type": {
+                "com.linkedin.schema.StringType": {}
+              }
+            },
+            "nativeDataType": "string",
+            "recursive": false
+          },
+          {
+            "fieldPath": "another_field",
+            "description": "this is another field",
+            "type": {
+              "type": {
+                "com.linkedin.schema.StringType": {}
+              }
+            },
+            "nativeDataType": "string",
+            "recursive": false
+          }
+        ]
+      }
+    },
+    "datasetKey": {
+      "value": {
+        "platform": "urn:li:dataPlatform:snowflake",
+        "name": "rubiojr",
+        "origin": "PROD"
+      }
+    },
+    "urn": "urn:li:dataset:(urn:li:dataPlatform:snowflake,test.test_schema.rubiojr,PROD)"
+  }
+]
