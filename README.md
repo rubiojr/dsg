@@ -34,7 +34,7 @@ go build
 Or:
 
 ```bash
-go install github.com/rubiojr/dsg@latest
+go install github.com/rubiojr/dsg@main
 ```
 
 to install the latest version.
