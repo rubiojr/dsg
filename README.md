@@ -6,11 +6,13 @@ DSG (DataHub Schema Generator) is a command-line tool that uses AI to generate a
 
 ## Features
 
-- AI-assisted dataset schema generation
+- AI-assisted dataset generation
 - Support for Azure OpenAI and OpenAI APIs
-- Local history management of generated schemas
+- Local history management of generated datasets
 - Direct integration with DataHub REST API
-- View, manage, and deploy past schema generations
+- View, manage, and deploy past datasetgenerations
+- Adding new global glossary terms to DataHub
+
 
 ## Installation
 
@@ -60,13 +62,19 @@ export AZURE_OPENAI_API_VERSION="2024-08-01-preview"
 
 ### Basic Commands
 
+#### Adding glossary terms
+
+```bash
+dsg add-term --name <term> --definition <definition> # URN is auto-generated
+```
+
 #### Generate a Dataset Schema
 
 ```bash
 dsg generate
 ```
 
-This will open an interactive prompt where you can describe the dataset you want to create. After writing your description, press Ctrl+D to submit. The AI will generate a schema and post it to DataHub automatically.
+This will open an interactive prompt where you can describe the dataset you want to create. After writing your description, press Ctrl+D to submit. The AI will generate a schema and it'll be posted to DataHub automatically.
 
 Generate using a previously used prompt:
 

@@ -57,7 +57,7 @@ func main() {
 					&cli.StringFlag{
 						Name:     "definition",
 						Usage:    "Glossary Term definition",
-						Required: true,
+						Required: false,
 					},
 				},
 			},

@@ -1,0 +1,12 @@
+[
+  {
+    "urn": "string",
+    "glossaryTermInfo": {
+      "value": {
+        "name": "string",
+        "definition": "string",
+        "termSource": "string"
+      }
+    }
+  }
+]
