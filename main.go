@@ -63,6 +63,25 @@ func main() {
 				},
 			},
 			{
+				Name:      "post-history-file",
+				Usage:     "Create a dataset from a JSON history file",
+				ArgsUsage: "FILE",
+				Action:    runFromHistoryFile,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "datahub-gms-url",
+						EnvVars: []string{"DATAHUB_GMS_URL"},
+						Usage:   "DataHub URL",
+						Value:   "https://api.datahub.io",
+					},
+					&cli.StringFlag{
+						Name:    "datahub-gms-token",
+						EnvVars: []string{"DATAHUB_GMS_TOKEN"},
+						Usage:   "DataHub token",
+					},
+				},
+			},
+			{
 				Name:      "from-json",
 				Usage:     "Create a dataset from a JSON file",
 				ArgsUsage: "FILE",
@@ -758,6 +777,56 @@ func runFromJSON(c *cli.Context) error {
 	}
 
 	count, err := dh.PostEntity(entityType, string(jblob))
+	if err != nil {
+		return fmt.Errorf("error adding datasets: %w", err)
+	}
+
+	fmt.Printf("%d entities successfully created in DataHub!\n", count)
+	return nil
+}
+
+type HistoryItem struct {
+	ID       int64  `json:"ID"`
+	Prompt   string `json:"Prompt"`
+	Response string `json:"Response"`
+}
+
+func runFromHistoryFile(c *cli.Context) error {
+	filePath := c.Args().First()
+
+	if filePath == "" {
+		return errors.New("file path is required")
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading file: %w", err)
+	}
+
+	// if entity-type is dataset it'll be an array of Dataset objects
+	var historyItem HistoryItem
+
+	err = json.Unmarshal(data, &historyItem)
+	if err != nil {
+		return fmt.Errorf("error decoding JSON: %w", err)
+	}
+
+	var datasets []datahub.Dataset
+	err = json.Unmarshal([]byte(historyItem.Response), &datasets)
+	if err != nil {
+		return fmt.Errorf("error decoding JSON: %w", err)
+	}
+
+	datahubURL := c.String("datahub-gms-url")
+	datahubToken := c.String("datahub-gms-token")
+
+	dh := datahub.NewClient(datahubURL, datahubToken)
+	jblob, err := json.MarshalIndent(datasets, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error encoding datasets to JSON: %w", err)
+	}
+
+	count, err := dh.PostEntity("dataset", string(jblob))
 	if err != nil {
 		return fmt.Errorf("error adding datasets: %w", err)
 	}
