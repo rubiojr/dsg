@@ -510,8 +510,19 @@ func runShowHistory(c *cli.Context) error {
 		return fmt.Errorf("failed to get history entry: %w", err)
 	}
 
+	var datasets []datahub.Dataset
+	err = json.Unmarshal([]byte(resp.Response), &datasets)
+	if err != nil {
+		return fmt.Errorf("error decoding JSON: %w", err)
+	}
+
+	item := HistoryItem{
+		Prompt:   resp.Prompt,
+		Datasets: datasets,
+	}
+
 	if outputJSON {
-		jsonData, err := json.MarshalIndent(resp, "", "  ")
+		jsonData, err := json.MarshalIndent(item, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal to JSON: %w", err)
 		}
@@ -786,9 +797,8 @@ func runFromJSON(c *cli.Context) error {
 }
 
 type HistoryItem struct {
-	ID       int64  `json:"ID"`
-	Prompt   string `json:"Prompt"`
-	Response string `json:"Response"`
+	Prompt   string            `json:"prompt"`
+	Datasets []datahub.Dataset `json:"datasets"`
 }
 
 func runFromHistoryFile(c *cli.Context) error {
@@ -804,15 +814,9 @@ func runFromHistoryFile(c *cli.Context) error {
 	}
 
 	// if entity-type is dataset it'll be an array of Dataset objects
-	var historyItem HistoryItem
+	var item HistoryItem
 
-	err = json.Unmarshal(data, &historyItem)
-	if err != nil {
-		return fmt.Errorf("error decoding JSON: %w", err)
-	}
-
-	var datasets []datahub.Dataset
-	err = json.Unmarshal([]byte(historyItem.Response), &datasets)
+	err = json.Unmarshal(data, &item)
 	if err != nil {
 		return fmt.Errorf("error decoding JSON: %w", err)
 	}
@@ -821,7 +825,7 @@ func runFromHistoryFile(c *cli.Context) error {
 	datahubToken := c.String("datahub-gms-token")
 
 	dh := datahub.NewClient(datahubURL, datahubToken)
-	jblob, err := json.MarshalIndent(datasets, "", "  ")
+	jblob, err := json.MarshalIndent(item.Datasets, "", "  ")
 	if err != nil {
 		return fmt.Errorf("error encoding datasets to JSON: %w", err)
 	}
