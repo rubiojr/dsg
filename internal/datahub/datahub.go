@@ -28,6 +28,95 @@ func NewClient(url string, token string) *Client {
 		HttpClient: http.DefaultClient,
 	}
 }
+func (c *Client) paginateDatasets(count int, scrollId string) ([]*Dataset, string, error) {
+	var url string
+	if scrollId == "" {
+		// Initial request without scrollId
+		url = fmt.Sprintf("%s/openapi/v3/entity/dataset?systemMetadata=false&aspects=glossaryTerms&aspects=editableSchemaMetadata&includeSoftDelete=false&skipCache=false&aspects=schemaMetadata&count=%d&sort=urn&sortOrder=ASCENDING&query=%%2A", c.URL, count)
+	} else {
+		// Follow-up request with scrollId
+		url = fmt.Sprintf("%s/openapi/v3/entity/dataset?systemMetadata=false&aspects=glossaryTerms&aspects=editableSchemaMetadata&includeSoftDelete=false&skipCache=false&aspects=schemaMetadata&count=%d&scrollId=%s", c.URL, count, scrollId)
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("error creating request: %w", err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, "", fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("error reading response body: %w", err)
+	}
+
+	var result struct {
+		ScrollId string     `json:"scrollId,omitempty"`
+		Entities []*Dataset `json:"entities"`
+		Metadata struct {
+			Total int `json:"total"`
+		} `json:"metadata,omitempty"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, "", fmt.Errorf("error unmarshaling response: %w", err)
+	}
+
+	if len(result.Entities) == 0 {
+		return []*Dataset{}, "", nil
+	}
+
+	return result.Entities, result.ScrollId, nil
+}
+
+type ListOptions struct {
+	PerPage int
+}
+
+// GetAllDatasets retrieves all datasets from DataHub using scrollId pagination
+func (c *Client) GetDatasets(page func(datasets []*Dataset) error, opts *ListOptions) error {
+	count := opts.PerPage // Number of records per page
+	scrollId := ""
+
+	for {
+		datasets, nextScrollId, err := c.paginateDatasets(count, scrollId)
+		if err != nil {
+			return err
+		}
+
+		// If no more datasets, break the loop
+		if len(datasets) == 0 {
+			break
+		}
+
+		if err := page(datasets); err != nil {
+			return err
+		}
+
+		// If there's no scrollId in the response, we're at the end
+		if nextScrollId == "" {
+			break
+		}
+
+		// Update scrollId for the next request
+		scrollId = nextScrollId
+	}
+
+	return nil
+}
 
 // PostDataset sends one or more datasets to the DataHub API
 func (c *Client) PostEntity(resource, payload string) (int, error) {

@@ -17,11 +17,25 @@ type GlossaryTermValue struct {
 
 // Dataset represents a DataHub dataset entity
 type Dataset struct {
-	SchemaMetadata SchemaMetadataContainer `json:"schemaMetadata"`
-	Key            DatasetKeyContainer     `json:"datasetKey"`
-	GlobalTags     GlobalTagsContainer     `json:"globalTags"`
-	GlossaryTerms  GlossaryTermsContainer  `json:"glossaryTerms"`
-	URN            string                  `json:"urn"`
+	SchemaMetadata         SchemaMetadataContainer         `json:"schemaMetadata"`
+	Key                    DatasetKeyContainer             `json:"datasetKey"`
+	GlobalTags             GlobalTagsContainer             `json:"globalTags"`
+	GlossaryTerms          GlossaryTermsContainer          `json:"glossaryTerms"`
+	URN                    string                          `json:"urn"`
+	EditableSchemaMetadata EditableSchemaMetadataContainer `json:"editableSchemaMetadata,omitempty"`
+}
+
+type EditableSchemaMetadata struct {
+	EditableSchemaFieldInfo []EditableSchemaFieldInfo `json:"editableSchemaFieldInfo"`
+}
+
+type EditableSchemaFieldInfo struct {
+	FieldPath     string                      `json:"fieldPath"`
+	GlossaryTerms FieldGlossaryTermsContainer `json:"glossaryTerms"`
+}
+
+type EditableSchemaMetadataContainer struct {
+	Value EditableSchemaMetadata `json:"value"`
 }
 
 // SchemaMetadataContainer wraps SchemaMetadata with a value field
